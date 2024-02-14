@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+</head>
+<body>
+    <h1>File Upload</h1>
+    <form id="uploadForm">
+        <input type="file" name="file" id="file">
+        <input type="button" value="Upload" onclick="uploadFile()">
+    </form>
+    
+    <h2>Uploaded Files</h2>
+    <ul id="fileList"></ul>
+
+    <script>
+        function fetchFiles() {
+            fetch('/files')
+                .then(response => response.json())
+                .then(files => {
+                    const fileList = document.getElementById('fileList');
+                    fileList.innerHTML = ''; 
+                    files.forEach(file => {
+                        const li = document.createElement('li');
+                        li.textContent = file;
+                        
+                        const downloadButton = document.createElement('button');
+                        downloadButton.textContent = 'Download';
+                        downloadButton.onclick = () => {
+                            window.location.href = `/files/${file}`;
+                        };
+                        li.appendChild(downloadButton);
+                        
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Delete';
+                        deleteButton.onclick = () => {
+                            fetch(`/files/${file}`, { method: 'DELETE' })
+                                .then(response => {
+                                    if (response.ok) {
+                                        fetchFiles(); 
+                                    } else {
+                                        alert('Failed to delete file');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error deleting file:', error);
+                                    alert('Error deleting file');
+                                });
+                        };
+                        li.appendChild(deleteButton);
+                        
+                        fileList.appendChild(li);
+                    });
+                })
+                .catch(error => console.error('Error fetching files:', error));
+        }
+
+        fetchFiles();
+
+        function uploadFile() {
+            const formData = new FormData();
+            formData.append('file', document.getElementById('file').files[0]);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/'; 
+                } else {
+                    alert('Failed to upload file');
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading file:', error);
+                alert('Error uploading file');
+            });
+        }
+    </script>
+</body>
+</html>
